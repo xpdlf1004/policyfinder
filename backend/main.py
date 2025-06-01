@@ -4,12 +4,17 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import json
+from fastapi.responses import HTMLResponse
+
+# Set environment variable to disable tokenizers parallelism warning
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 from .models.schema import Question, PolicyResponse
 from .data_loader import DataLoader
 from .rag.embed import PolicyEmbedder
 from .rag.retrieve import PolicyRetriever
-from .rag.generate import PolicyGenerator
+from .rag.generate import ResponseGenerator
 
 # Load environment variables
 load_dotenv()
@@ -23,25 +28,22 @@ templates = Jinja2Templates(directory="backend/templates")
 data_loader = DataLoader()
 embedder = PolicyEmbedder()
 retriever = PolicyRetriever(embedder)
-generator = PolicyGenerator(model_type=os.getenv("LLM_PROVIDER", "openai"))
+generator = ResponseGenerator()
 
-# Load data and build index on startup
+# Load index on startup
 @app.on_event("startup")
 async def startup_event():
-    try:
-        policies = data_loader.load_data()
-        if not embedder.load_index():
-            embeddings = embedder.create_embeddings([p.dict() for p in policies])
-            embedder.build_index([p.dict() for p in policies], embeddings)
-            embedder.save_index()
-    except FileNotFoundError:
-        print("Warning: No policy data found. Please add data/policy_data.json")
+    if not embedder.load_index():
+        print("Warning: No FAISS index found. Please run 'python script/embed_policies.py' first.")
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    """Render home page with search interface."""
-    candidates = data_loader.get_candidates()
-    topics = data_loader.get_topics()
+    """Render the home page with search interface."""
+    # Load policy data to get unique candidates and topics
+    with open("data/policy_data.json", "r", encoding="utf-8") as f:
+        data = json.load(f)
+        candidates = sorted(set(p["candidate"] for p in data))
+        topics = sorted(set(p["topic"] for p in data))
     return templates.TemplateResponse(
         "index.html",
         {
@@ -60,8 +62,6 @@ async def ask_question(question: Question) -> PolicyResponse:
         candidate_filter=question.candidate_filter,
         topic_filter=question.topic_filter
     )
-    
-    # Generate response
-    answer = generator.generate_response(question.question, policies)
-    
-    return PolicyResponse(answer=answer, sources=policies) 
+    # Generate response and get referenced policies
+    answer, referenced_policies = generator.generate_response(question.question, policies)
+    return PolicyResponse(answer=answer, sources=referenced_policies) 

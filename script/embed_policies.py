@@ -1,21 +1,29 @@
 import sys
-import os
 from pathlib import Path
+import json
 
-sys.path.append(str(Path(__file__).parent))
+# Add backend directory to Python path
+backend_dir = Path(__file__).parent.parent
+sys.path.append(str(backend_dir))
 
-from data_loader import DataLoader
-from rag.embed import PolicyEmbedder
+from backend.rag.embed import PolicyEmbedder
+from backend.models.schema import Policy
 
 def main():
-    print("정책 임베딩 및 인덱스 생성 시작...")
-    data_loader = DataLoader()
-    policies = data_loader.load_data()
+    # Load policy data
+    with open("data/policy_data.json", "r", encoding="utf-8") as f:
+        data = json.load(f)
+        policies = [Policy(**p) for p in data]
+    
+    # Create embeddings
     embedder = PolicyEmbedder()
-    embeddings = embedder.create_embeddings([p.dict() for p in policies])
-    embedder.build_index([p.dict() for p in policies], embeddings)
+    embeddings = embedder.create_embeddings(policies)
+    
+    # Build and save index
+    embedder.build_index(policies, embeddings)
     embedder.save_index()
-    print("FAISS 인덱스가 data/policy.index에 저장되었습니다.")
+    
+    print("Embeddings created and saved successfully!")
 
 if __name__ == "__main__":
     main() 

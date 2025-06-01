@@ -37,6 +37,7 @@ env/
 
 # Project specific
 data/policy.index
+data/policy_ids.json
 *.log
 .coverage
 htmlcov/

@@ -5,6 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>정책파인더 (PolicyFinder)</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .spinner {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
@@ -20,12 +35,19 @@
                     <input type="text" id="question" name="question" required
                            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                            placeholder="예: 청년 주거 공약에 대해 알려줘">
+                    <div class="mt-2 flex flex-wrap gap-2">
+                        <button type="button" class="bg-gray-200 hover:bg-blue-100 text-gray-700 px-3 py-1 rounded example-question">여성을 위한 공약이 있으면 알려줘</button>
+                        <button type="button" class="bg-gray-200 hover:bg-blue-100 text-gray-700 px-3 py-1 rounded example-question">군비 축소 관련 공약이 있나?</button>
+                        <button type="button" class="bg-gray-200 hover:bg-blue-100 text-gray-700 px-3 py-1 rounded example-question">환경 보호 관련 공약 알려줄 수 있어?</button>
+                        <button type="button" class="bg-gray-200 hover:bg-blue-100 text-gray-700 px-3 py-1 rounded example-question">저소득층을 위한 복지 정책이 궁금해</button>
+                        <button type="button" class="bg-gray-200 hover:bg-blue-100 text-gray-700 px-3 py-1 rounded example-question">교육 정책에서 등록금 지원 내용이 있나?</button>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label for="candidate" class="block text-sm font-medium text-gray-700 mb-1">후보 필터</label>
-                        <select id="candidate" name="candidate_filter"
+                        <label for="candidate_filter" class="block text-sm font-medium text-gray-700 mb-1">후보 필터</label>
+                        <select id="candidate_filter" name="candidate_filter"
                                 class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                             <option value="">전체 후보</option>
                             {% for candidate in candidates %}
@@ -35,8 +57,8 @@
                     </div>
 
                     <div>
-                        <label for="topic" class="block text-sm font-medium text-gray-700 mb-1">주제 필터</label>
-                        <select id="topic" name="topic_filter"
+                        <label for="topic_filter" class="block text-sm font-medium text-gray-700 mb-1">주제 필터</label>
+                        <select id="topic_filter" name="topic_filter"
                                 class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                             <option value="">전체 주제</option>
                             {% for topic in topics %}
@@ -46,10 +68,13 @@
                     </div>
                 </div>
 
-                <button type="submit"
-                        class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                    검색하기
-                </button>
+                <div class="flex items-center justify-between">
+                    <button type="submit"
+                            class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        검색하기
+                    </button>
+                    <div id="spinner" class="spinner"></div>
+                </div>
             </form>
         </div>
 
@@ -67,6 +92,10 @@
     <script>
         document.getElementById('searchForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // Show spinner and hide result
+            document.getElementById('spinner').style.display = 'block';
+            document.getElementById('result').classList.add('hidden');
             
             const formData = new FormData(e.target);
             const data = {
@@ -86,7 +115,8 @@
 
                 const result = await response.json();
                 
-                // Show result section
+                // Hide spinner and show result
+                document.getElementById('spinner').style.display = 'none';
                 document.getElementById('result').classList.remove('hidden');
                 
                 // Update answer
@@ -95,17 +125,28 @@
                 // Update sources
                 const sourcesDiv = document.getElementById('sources');
                 sourcesDiv.innerHTML = result.sources.map((source, index) => `
-                    <div class="border-l-4 border-blue-500 pl-4">
-                        <h4 class="font-medium text-gray-800">${source.candidate} - ${source.topic}</h4>
-                        <p class="text-gray-600 mt-1">${source.text}</p>
-                        <p class="text-sm text-gray-500 mt-1">출처: ${source.source}</p>
+                    <div class="border-l-4 border-blue-500 pl-4 mb-4">
+                      <div class="font-bold text-lg mb-1">
+                        ${source.candidate} - ${source.topic} <span class="text-gray-500">[공약 ID: ${source.id}]</span>
+                      </div>
+                      <div class="mb-1">${source.text}</div>
+                      <div class="text-sm text-gray-500">출처: ${source.source}</div>
                     </div>
                 `).join('');
                 
             } catch (error) {
                 console.error('Error:', error);
                 alert('검색 중 오류가 발생했습니다.');
+                document.getElementById('spinner').style.display = 'none';
             }
+        });
+
+        // Example question click handler
+        document.querySelectorAll('.example-question').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.getElementById('question').value = this.textContent;
+                document.getElementById('question').focus();
+            });
         });
     </script>
 </body>

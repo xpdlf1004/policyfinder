@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 class Policy(BaseModel):
+    id: int
     candidate: str
     topic: str
     text: str
