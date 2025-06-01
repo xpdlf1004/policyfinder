@@ -7,15 +7,15 @@
 - 질문 기반 공약 검색
 - 관련 공약 요약 및 비교
 - 후보별 공약 필터링
-- 주제별 공약 필터링
+- 주제별 공약 필터링 (고정된 카테고리)
 
 ## 기술 스택
 
 - Backend: Python (FastAPI)
 - Frontend: HTML Templates (Jinja2)
 - Vector Search: FAISS
-- Embedding: BGE-KO / KoSimCSE
-- LLM: OpenAI GPT / Claude
+- Embedding: KoSimCSE (BGE-KO 등)
+- LLM: OpenAI GPT
 
 ## 설치 및 실행
 
@@ -62,8 +62,9 @@ policyfinder/
 │   └── templates/            # HTML 템플릿 (Jinja2)
 │       └── index.html        # 질문 입력 및 응답 출력 페이지
 ├── data/
-│   ├── policy_data.json      # 사용자가 제공한 공약 JSON
-│   └── policy.index          # FAISS 인덱스 파일
+│   ├── policy_data.json      # 공약 JSON 데이터 (고정 topic 카테고리)
+│   ├── policy.index          # FAISS 인덱스 파일
+│   └── policy_ids.json       # 인덱스-정책 ID 매핑
 ├── script/
 │   └── embed_policies.py     # 임베딩 및 인덱스 생성 스크립트
 └── README.md
@@ -75,12 +76,29 @@ policyfinder/
 
 ```json
 {
+  "id": 1,
   "candidate": "후보명",
-  "topic": "정책 분야",
+  "topic": "경제/일자리", // 고정 카테고리 중 하나
   "text": "공약 본문",
-  "source": "공약 출처 URL"
+  "source": "공약 출처"
 }
 ```
+
+### topic(주제) 카테고리 목록
+- 경제/일자리
+- 주거
+- 복지
+- 교육
+- 환경
+- 의료/건강
+- 정치/사회
+- 지역/교통
+- 외교/안보
+- 사회/기타
+- 과학기술
+- 문화/스포츠
+- 소비자/권익
+- 농업
 
 ## 라이선스
 
