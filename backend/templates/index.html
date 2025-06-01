@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>정책파인더 (PolicyFinder)</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">정책파인더</h1>
+            <p class="text-gray-600">대통령 후보 공약 정보 검색 및 비교 시스템</p>
+        </header>
+
+        <div class="max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-6">
+            <form id="searchForm" class="space-y-4">
+                <div>
+                    <label for="question" class="block text-sm font-medium text-gray-700 mb-1">질문</label>
+                    <input type="text" id="question" name="question" required
+                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="예: 청년 주거 공약에 대해 알려줘">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="candidate" class="block text-sm font-medium text-gray-700 mb-1">후보 필터</label>
+                        <select id="candidate" name="candidate_filter"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">전체 후보</option>
+                            {% for candidate in candidates %}
+                            <option value="{{ candidate }}">{{ candidate }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="topic" class="block text-sm font-medium text-gray-700 mb-1">주제 필터</label>
+                        <select id="topic" name="topic_filter"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">전체 주제</option>
+                            {% for topic in topics %}
+                            <option value="{{ topic }}">{{ topic }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit"
+                        class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    검색하기
+                </button>
+            </form>
+        </div>
+
+        <div id="result" class="max-w-3xl mx-auto mt-8 hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">검색 결과</h2>
+                <div id="answer" class="prose max-w-none mb-6"></div>
+                
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">참고한 공약</h3>
+                <div id="sources" class="space-y-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = {
+                question: formData.get('question'),
+                candidate_filter: formData.get('candidate_filter') || null,
+                topic_filter: formData.get('topic_filter') || null
+            };
+
+            try {
+                const response = await fetch('/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                // Show result section
+                document.getElementById('result').classList.remove('hidden');
+                
+                // Update answer
+                document.getElementById('answer').innerHTML = result.answer.replace(/\n/g, '<br>');
+                
+                // Update sources
+                const sourcesDiv = document.getElementById('sources');
+                sourcesDiv.innerHTML = result.sources.map((source, index) => `
+                    <div class="border-l-4 border-blue-500 pl-4">
+                        <h4 class="font-medium text-gray-800">${source.candidate} - ${source.topic}</h4>
+                        <p class="text-gray-600 mt-1">${source.text}</p>
+                        <p class="text-sm text-gray-500 mt-1">출처: ${source.source}</p>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('검색 중 오류가 발생했습니다.');
+            }
+        });
+    </script>
+</body>
+</html> 
