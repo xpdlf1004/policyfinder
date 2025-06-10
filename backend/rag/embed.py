@@ -2,7 +2,6 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 from typing import List, Dict
 import faiss
-import os
 import json
 from pathlib import Path
 from backend.models.schema import Policy
