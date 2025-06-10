@@ -1,12 +1,16 @@
 import os
 import re
 from openai import OpenAI
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Any
 from ..models.schema import Policy
+from ..qdrant_rag.qdrant_rag_pipeline import QdrantRAGPipeline
 
 class ResponseGenerator:
-    def __init__(self):
+    def __init__(self, use_qdrant: bool = False):
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        self.use_qdrant = use_qdrant
+        if use_qdrant:
+            self.qdrant_pipeline = QdrantRAGPipeline()
 
     def format_context(self, policies: List[Policy]) -> str:
         """Format retrieved policies into context string."""
@@ -35,6 +39,15 @@ class ResponseGenerator:
 
     def generate_response(self, question: str, policies: List[Policy]) -> Tuple[str, List[Policy]]:
         """Generate response using OpenAI API and return referenced policies."""
+        if self.use_qdrant:
+            try:
+                result = self.qdrant_pipeline.run_pledge_query_with_sources(question)
+                return result["answer"], []  # Qdrant RAG에서는 sources가 이미 답변에 포함되어 있음
+            except Exception as e:
+                print(f"Qdrant RAG 에러 발생: {str(e)}")
+                print("기존 방식으로 폴백합니다.")
+                self.use_qdrant = False
+
         if not policies:
             return "죄송합니다. 검색 조건에 맞는 공약을 찾을 수 없습니다. 다른 검색어나 필터를 사용해보세요.", []
             
@@ -59,7 +72,7 @@ class ResponseGenerator:
         
         # Generate response
         response = self.client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "당신은 대선 후보들의 공약을 분석하고 비교하는 전문가입니다. 주어진 정보만을 사용하여 정확하고 객관적인 답변을 제공해주세요. 답변에는 참고한 공약 ID [공약: 숫자]를 표시해주세요."},
                 {"role": "user", "content": prompt}

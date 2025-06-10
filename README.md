@@ -30,6 +30,15 @@ python script/embed_policies.py
 ```
 - 정책 데이터(`data/policy_data.json`)를 수정한 경우, 위 스크립트를 다시 실행해야 합니다.
 
+2-1. qdrant vectordb 및 indexing
+```bash
+docker run -p 6333:6333 -v $(pwd)/qdrant_storage:/qdrant/storage qdrant/qdrant
+```
+```
+python3 script/upload_to_qdrant.py
+```
+
+
 3. 환경 변수 설정:
 ```bash
 cp .env.example .env

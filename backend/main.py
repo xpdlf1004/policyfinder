@@ -6,6 +6,7 @@ import os
 from dotenv import load_dotenv
 import json
 from fastapi.responses import HTMLResponse
+from typing import List
 
 # Set environment variable to disable tokenizers parallelism warning
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -28,7 +29,8 @@ templates = Jinja2Templates(directory="backend/templates")
 data_loader = DataLoader()
 embedder = PolicyEmbedder()
 retriever = PolicyRetriever(embedder)
-generator = ResponseGenerator()
+faiss_generator = ResponseGenerator(use_qdrant=False)
+qdrant_generator = ResponseGenerator(use_qdrant=True)
 
 # Load index on startup
 @app.on_event("startup")
@@ -56,12 +58,69 @@ async def home(request: Request):
 @app.post("/ask")
 async def ask_question(question: Question) -> PolicyResponse:
     """Process question and return response with sources."""
-    # Retrieve relevant policies
-    policies = retriever.retrieve(
-        question.question,
-        candidate_filter=question.candidate_filter,
-        topic_filter=question.topic_filter
-    )
-    # Generate response and get referenced policies
-    answer, referenced_policies = generator.generate_response(question.question, policies)
-    return PolicyResponse(answer=answer, sources=referenced_policies) 
+    # 검색 엔진에 따라 다른 처리
+    if question.search_engine == "qdrant":
+        print("Qdrant 검색 엔진 사용")
+        # Qdrant 검색 파라미터 설정
+        search_params = {
+            "k": 5,  # 상위 5개 결과
+            "score_threshold": 0.7  # 유사도 임계값
+        }
+        
+        # Qdrant 검색 실행
+        policies = qdrant_generator.qdrant_pipeline.run_pledge_query_with_sources(
+            question.question,
+            candidate_filter=question.candidate_filter,
+            topic_filter=question.topic_filter,
+            **search_params
+        )
+        
+        # 검색 결과가 있는 경우
+        if policies:
+            # 컨텍스트 생성
+            context = qdrant_generator.qdrant_pipeline._create_context_from_policies(policies)
+            
+            # 응답 생성
+            answer = qdrant_generator.qdrant_pipeline.llm.invoke(
+                qdrant_generator.qdrant_pipeline.prompt.format(
+                    context=context,
+                    input=question.question
+                )
+            )
+            
+            # FAISS와 동일한 형식으로 응답 반환
+            return PolicyResponse(
+                answer=answer.content,  # AIMessage에서 content 추출
+                sources=[{
+                    "id": p.id,
+                    "text": p.text,
+                    "source": p.source,
+                    "candidate": p.candidate,
+                    "topic": p.topic
+                } for p in policies]
+            )
+        else:
+            return PolicyResponse(answer="검색 결과가 없습니다.", sources=[])
+    else:
+        # FAISS를 사용하는 경우 (기존 로직)
+        policies = retriever.retrieve(
+            question.question,
+            candidate_filter=question.candidate_filter,
+            topic_filter=question.topic_filter
+        )
+        answer, referenced_policies = faiss_generator.generate_response(question.question, policies)
+        return PolicyResponse(answer=answer, sources=referenced_policies)
+
+@app.get("/candidates")
+async def get_candidates(search_engine: str = "faiss") -> List[str]:
+    """Get list of candidates."""
+    if search_engine == "qdrant":
+        return qdrant_generator.qdrant_pipeline.get_candidates()
+    return faiss_generator.retriever.get_candidates()
+
+@app.get("/topics")
+async def get_topics(search_engine: str = "faiss") -> List[str]:
+    """Get list of topics."""
+    if search_engine == "qdrant":
+        return qdrant_generator.qdrant_pipeline.get_topics()
+    return faiss_generator.retriever.get_topics() 

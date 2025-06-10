@@ -15,4 +15,5 @@ class PolicyResponse(BaseModel):
 class Question(BaseModel):
     question: str
     candidate_filter: Optional[str] = None
-    topic_filter: Optional[str] = None 
+    topic_filter: Optional[str] = None
+    search_engine: str = "faiss"  # 기본값은 faiss 

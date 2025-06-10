@@ -64,3 +64,6 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg 
+
+# qdrant
+qdrant_storage/
