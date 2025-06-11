@@ -1,0 +1,358 @@
+[
+  {
+    "query_id": "Q01",
+    "query": "이재명 후보의 기본소득 정책이 궁금해요",
+    "relevant_ids": [
+      1
+    ],
+    "hard_negative_ids": [
+      5,
+      6,
+      18
+    ]
+  },
+  {
+    "query_id": "Q02",
+    "query": "지역 소상공인을 위한 공약은 어떤 게 있나요?",
+    "relevant_ids": [
+      3,
+      18
+    ],
+    "hard_negative_ids": [
+      6,
+      73
+    ]
+  },
+  {
+    "query_id": "Q03",
+    "query": "여성가족부 개편에 대한 입장은 무엇인가요?",
+    "relevant_ids": [
+      14
+    ],
+    "hard_negative_ids": [
+      64,
+      90,
+      101
+    ]
+  },
+  {
+    "query_id": "Q04",
+    "query": "탄소중립과 재생에너지 전환 관련 공약을 알려주세요",
+    "relevant_ids": [
+      7,
+      77,
+      95,
+      109
+    ],
+    "hard_negative_ids": [
+      50,
+      39
+    ]
+  },
+  {
+    "query_id": "Q05",
+    "query": "김문수 후보의 노동시장 유연화 공약이 있나요?",
+    "relevant_ids": [
+      33
+    ],
+    "hard_negative_ids": [
+      25,
+      91
+    ]
+  },
+  {
+    "query_id": "Q06",
+    "query": "청년 일자리 문제 해결을 위한 정책이 있나요?",
+    "relevant_ids": [
+      19,
+      48,
+      63,
+      69
+    ],
+    "hard_negative_ids": [
+      18,
+      33
+    ]
+  },
+  {
+    "query_id": "Q07",
+    "query": "공정한 사회를 만들기 위한 방안은?",
+    "relevant_ids": [
+      30,
+      68,
+      55,
+      119
+    ],
+    "hard_negative_ids": [
+      27,
+      76
+    ]
+  },
+  {
+    "query_id": "Q08",
+    "query": "기본주택이나 주거 안정화 정책이 궁금합니다",
+    "relevant_ids": [
+      2,
+      29,
+      36,
+      59,
+      66,
+      96
+    ],
+    "hard_negative_ids": [
+      45
+    ]
+  },
+  {
+    "query_id": "Q09",
+    "query": "과학기술 인재 양성과 R&D 투자를 강조한 공약은?",
+    "relevant_ids": [
+      16,
+      65,
+      42
+    ],
+    "hard_negative_ids": [
+      87
+    ]
+  },
+  {
+    "query_id": "Q10",
+    "query": "의료 공공성 강화에 대한 입장은?",
+    "relevant_ids": [
+      9,
+      75,
+      102
+    ],
+    "hard_negative_ids": [
+      54
+    ]
+  },
+  {
+    "query_id": "Q11",
+    "query": "농업 분야 청년 지원 정책이 있나요?",
+    "relevant_ids": [
+      13,
+      79
+    ],
+    "hard_negative_ids": [
+      100
+    ]
+  },
+  {
+    "query_id": "Q12",
+    "query": "국회의원 특권 폐지에 대한 입장은?",
+    "relevant_ids": [
+      8,
+      61,
+      70
+    ],
+    "hard_negative_ids": [
+      30
+    ]
+  },
+  {
+    "query_id": "Q13",
+    "query": "사법개혁에 대한 정책은?",
+    "relevant_ids": [
+      21,
+      38,
+      86,
+      94
+    ],
+    "hard_negative_ids": [
+      60
+    ]
+  },
+  {
+    "query_id": "Q14",
+    "query": "디지털 정부 혁신에 대한 정책은?",
+    "relevant_ids": [
+      27
+    ],
+    "hard_negative_ids": [
+      76
+    ]
+  },
+  {
+    "query_id": "Q15",
+    "query": "국방력 강화 또는 병역 제도 개편 공약이 있나요?",
+    "relevant_ids": [
+      22,
+      37,
+      67,
+      78,
+      82
+    ],
+    "hard_negative_ids": [
+      56,
+      105
+    ]
+  },
+  {
+    "query_id": "Q16",
+    "query": "재난 대응 시스템 혁신 관련 공약이 궁금합니다",
+    "relevant_ids": [
+      17,
+      117
+    ],
+    "hard_negative_ids": [
+      44
+    ]
+  },
+  {
+    "query_id": "Q17",
+    "query": "기후 위기 대응 정책은 무엇인가요?",
+    "relevant_ids": [
+      7,
+      95,
+      109
+    ],
+    "hard_negative_ids": [
+      77,
+      39
+    ]
+  },
+  {
+    "query_id": "Q18",
+    "query": "동물 복지 또는 반려동물 정책이 있나요?",
+    "relevant_ids": [
+      15,
+      89,
+      104
+    ],
+    "hard_negative_ids": [
+      84
+    ]
+  },
+  {
+    "query_id": "Q19",
+    "query": "저출산 문제 해결 방안은?",
+    "relevant_ids": [
+      24,
+      53
+    ],
+    "hard_negative_ids": [
+      5
+    ]
+  },
+  {
+    "query_id": "Q20",
+    "query": "문화 예술인 창작 지원 공약은?",
+    "relevant_ids": [
+      11,
+      41,
+      74,
+      111
+    ],
+    "hard_negative_ids": [
+      34
+    ]
+  },
+  {
+    "query_id": "Q21",
+    "query": "교육 경쟁 완화나 무상 교육에 대한 공약이 있나요?",
+    "relevant_ids": [
+      97
+    ],
+    "hard_negative_ids": [
+      62
+    ]
+  },
+  {
+    "query_id": "Q22",
+    "query": "이주민 및 다문화 사회 관련 공약은?",
+    "relevant_ids": [
+      107
+    ],
+    "hard_negative_ids": [
+      93
+    ]
+  },
+  {
+    "query_id": "Q23",
+    "query": "성소수자 권리 보호에 대한 입장은?",
+    "relevant_ids": [
+      108
+    ],
+    "hard_negative_ids": [
+      90,
+      101
+    ]
+  },
+  {
+    "query_id": "Q24",
+    "query": "공공기관 지방 이전 관련 정책이 있나요?",
+    "relevant_ids": [
+      23
+    ],
+    "hard_negative_ids": [
+      45
+    ]
+  },
+  {
+    "query_id": "Q25",
+    "query": "디지털 금융 소비자 보호 관련 정책은?",
+    "relevant_ids": [
+      26
+    ],
+    "hard_negative_ids": [
+      87
+    ]
+  },
+  {
+    "query_id": "Q26",
+    "query": "기본사회 정책이 무엇인가요?",
+    "relevant_ids": [
+      28
+    ],
+    "hard_negative_ids": [
+      92
+    ]
+  },
+  {
+    "query_id": "Q27",
+    "query": "공정한 채용 시스템 구축 공약이 있나요?",
+    "relevant_ids": [
+      30
+    ],
+    "hard_negative_ids": [
+      55
+    ]
+  },
+  {
+    "query_id": "Q28",
+    "query": "미래 먹거리 산업을 위한 기술 투자 정책이 있나요?",
+    "relevant_ids": [
+      16,
+      42,
+      65
+    ],
+    "hard_negative_ids": [
+      115
+    ]
+  },
+  {
+    "query_id": "Q29",
+    "query": "시민 참여형 정치 개혁 방안은?",
+    "relevant_ids": [
+      94,
+      110,
+      116
+    ],
+    "hard_negative_ids": [
+      60
+    ]
+  },
+  {
+    "query_id": "Q30",
+    "query": "GTX 및 교통 인프라 확대에 대한 공약이 궁금해요",
+    "relevant_ids": [
+      10,
+      80,
+      49
+    ],
+    "hard_negative_ids": [
+      23
+    ]
+  }
+]
