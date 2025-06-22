@@ -15,10 +15,10 @@ load_dotenv()
 class QdrantRAGPipeline:
     def __init__(self):
         # 초기 설정
-        self.collection_name = "president_pledges"
+        self.collection_name = "policy_collection"
         self.qdrant = QdrantClient(host="localhost", port=6333)
         self.embedding = OpenAIEmbeddings()
-        self.llm = ChatOpenAI(model="gpt-4", temperature=0)
+        self.llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
         self.qdrant_store = Qdrant(
             client=self.qdrant,
@@ -51,12 +51,12 @@ class QdrantRAGPipeline:
             filter_conditions = []
             if candidate_filter:
                 filter_conditions.append({
-                    "key": "metadata.candidate",
+                    "key": "candidate",
                     "match": {"value": candidate_filter}
                 })
             if topic_filter:
                 filter_conditions.append({
-                    "key": "metadata.topic",
+                    "key": "topic",
                     "match": {"value": topic_filter}
                 })
             search_filter = {
@@ -75,7 +75,7 @@ class QdrantRAGPipeline:
         for result in search_results:
             payload = result.payload
             policies.append(Policy(
-                id=payload.get("id", 0),
+                id=int(payload.get("id", 0)),
                 candidate=payload.get("candidate", ""),
                 topic=payload.get("topic", ""),
                 text=payload.get("pledge", ""),
@@ -120,7 +120,7 @@ class QdrantRAGPipeline:
             
             # 검색 실행
             search_results = self.qdrant.search(
-                collection_name="policy_collection",
+                collection_name=self.collection_name,
                 query_vector=self.embedding.embed_query(query),
                 **search_params
             )
@@ -133,20 +133,19 @@ class QdrantRAGPipeline:
                 try:
                     # 메타데이터에서 정책 정보 가져오기
                     payload = result.payload
-                    metadata = payload.get("metadata", {})
                     
                     policy = Policy(
-                        id=metadata.get("id"),
-                        candidate=metadata.get("candidate"),
-                        topic=metadata.get("topic"),
-                        text=metadata.get("pledge"),
-                        source=metadata.get("source")
+                        id=int(payload.get("id", 0)),
+                        candidate=payload.get("candidate", ""),
+                        topic=payload.get("topic", ""),
+                        text=payload.get("pledge", ""),
+                        source=payload.get("source", "")
                     )
                     policies.append(policy)
                     print(f"정책 변환 성공: {policy.id}")
-                except (KeyError) as e:
+                except Exception as e:
                     print(f"정책 변환 오류: {str(e)}")
-                    print(f"메타데이터: {result.payload}")
+                    print(f"페이로드: {result.payload}")
                     continue
             
             return policies
@@ -155,34 +154,12 @@ class QdrantRAGPipeline:
             print(f"Qdrant 검색 중 오류 발생: {str(e)}")
             return []
 
-    def _create_search_filter(self, candidate_filter: str = None, topic_filter: str = None):
-        filter_conditions = []
-        if candidate_filter:
-            filter_conditions.append({
-                "key": "candidate",
-                "match": {"value": candidate_filter}
-            })
-        if topic_filter:
-            filter_conditions.append({
-                "key": "topic",
-                "match": {"value": topic_filter}
-            })
-
-        if filter_conditions:
-            return {
-                "must": filter_conditions,
-                "should": [],
-                "must_not": []
-            }
-        else:
-            return None
-
     def get_candidates(self) -> List[str]:
         """Qdrant에서 모든 후보 목록을 가져옵니다."""
         try:
             # Qdrant에서 모든 문서의 candidate 필드 값을 가져옴
             response = self.qdrant.scroll(
-                collection_name="policy_collection",
+                collection_name=self.collection_name,
                 limit=1000,  # 충분히 큰 수
                 with_payload=True,
                 with_vectors=False
@@ -191,8 +168,8 @@ class QdrantRAGPipeline:
             # 고유한 candidate 값 추출
             candidates = set()
             for point in response[0]:
-                if point.payload and "metadata" in point.payload:
-                    candidate = point.payload["metadata"].get("candidate")
+                if point.payload:
+                    candidate = point.payload.get("candidate")
                     if candidate:
                         candidates.add(candidate)
             
@@ -206,7 +183,7 @@ class QdrantRAGPipeline:
         try:
             # Qdrant에서 모든 문서의 topic 필드 값을 가져옴
             response = self.qdrant.scroll(
-                collection_name="policy_collection",
+                collection_name=self.collection_name,
                 limit=1000,  # 충분히 큰 수
                 with_payload=True,
                 with_vectors=False
@@ -215,8 +192,8 @@ class QdrantRAGPipeline:
             # 고유한 topic 값 추출
             topics = set()
             for point in response[0]:
-                if point.payload and "metadata" in point.payload:
-                    topic = point.payload["metadata"].get("topic")
+                if point.payload:
+                    topic = point.payload.get("topic")
                     if topic:
                         topics.add(topic)
             
