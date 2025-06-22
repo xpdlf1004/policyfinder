@@ -82,16 +82,24 @@ async def ask_question(question: Question) -> PolicyResponse:
                 context = qdrant_generator.qdrant_pipeline._create_context_from_policies(policies)
                 
                 # 응답 생성
-                answer = qdrant_generator.qdrant_pipeline.llm.invoke(
-                    qdrant_generator.qdrant_pipeline.prompt.format(
-                        context=context,
-                        input=question.question
-                    )
+                response = qdrant_generator.qdrant_pipeline.openai_client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role": "system", "content": "당신은 대선 후보들의 공약을 분석하고 비교하는 전문가입니다. 주어진 정보만을 사용하여 정확하고 객관적인 답변을 제공해주세요."},
+                        {"role": "user", "content": qdrant_generator.qdrant_pipeline.prompt_template.format(
+                            context=context,
+                            input=question.question
+                        )}
+                    ],
+                    temperature=0.5,
+                    max_tokens=4096
                 )
+                
+                answer = response.choices[0].message.content
                 
                 # FAISS와 동일한 형식으로 응답 반환
                 return PolicyResponse(
-                    answer=answer.content,  # AIMessage에서 content 추출
+                    answer=answer,
                     sources=policies
                 )
             else:

@@ -1,9 +1,6 @@
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain.prompts import PromptTemplate
-from langchain.chains import create_retrieval_chain
+from openai import OpenAI
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
-from langchain_community.vectorstores import Qdrant
 import os
 from dotenv import load_dotenv
 from typing import List, Optional, Dict, Any
@@ -17,23 +14,14 @@ class QdrantRAGPipeline:
         # 초기 설정
         self.collection_name = "policy_collection"
         self.qdrant = QdrantClient(host="localhost", port=6333)
-        self.embedding = OpenAIEmbeddings()
-        self.llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-
-        self.qdrant_store = Qdrant(
-            client=self.qdrant,
-            collection_name=self.collection_name,
-            embeddings=self.embedding
-        )
+        self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
         # 프롬프트 템플릿 정의
-        self.prompt = PromptTemplate.from_template(
-            template=(
-                "다음은 대통령 후보들의 공약 내용입니다:\n\n"
-                "{context}\n\n"
-                "이 내용을 바탕으로 사용자 질문에 답하세요:\n\n"
-                "질문: {input}"
-            )
+        self.prompt_template = (
+            "다음은 대통령 후보들의 공약 내용입니다:\n\n"
+            "{context}\n\n"
+            "이 내용을 바탕으로 사용자 질문에 답하세요:\n\n"
+            "질문: {input}"
         )
 
     def _create_search_params(
@@ -93,6 +81,18 @@ class QdrantRAGPipeline:
             for p in policies
         ])
 
+    def _embed_query(self, query: str) -> List[float]:
+        """OpenAI API를 사용하여 쿼리를 임베딩합니다."""
+        try:
+            response = self.openai_client.embeddings.create(
+                model="text-embedding-ada-002",
+                input=query
+            )
+            return response.data[0].embedding
+        except Exception as e:
+            print(f"임베딩 생성 오류: {str(e)}")
+            return []
+
     def run_pledge_query_with_sources(
         self,
         query: str,
@@ -109,6 +109,12 @@ class QdrantRAGPipeline:
             print(f"Topic filter: {topic_filter}")
             print(f"Search parameters: k={k}, score_threshold={score_threshold}")
 
+            # 쿼리 임베딩 생성
+            query_vector = self._embed_query(query)
+            if not query_vector:
+                print("임베딩 생성 실패")
+                return []
+
             # 검색 파라미터 설정
             search_params = self._create_search_params(
                 query=query,
@@ -121,7 +127,7 @@ class QdrantRAGPipeline:
             # 검색 실행
             search_results = self.qdrant.search(
                 collection_name=self.collection_name,
-                query_vector=self.embedding.embed_query(query),
+                query_vector=query_vector,
                 **search_params
             )
             
@@ -200,4 +206,12 @@ class QdrantRAGPipeline:
             return sorted(list(topics))
         except Exception as e:
             print(f"주제 목록 가져오기 실패: {str(e)}")
-            return [] 
+            return []
+
+    def llm(self):
+        """LLM 응답을 생성하는 메서드"""
+        return self.openai_client.chat.completions.create
+
+    def prompt(self):
+        """프롬프트 템플릿을 반환하는 메서드"""
+        return self.prompt_template 

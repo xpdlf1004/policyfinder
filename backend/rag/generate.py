@@ -39,15 +39,6 @@ class ResponseGenerator:
 
     def generate_response(self, question: str, policies: List[Policy]) -> Tuple[str, List[Policy]]:
         """Generate response using OpenAI API and return referenced policies."""
-        if self.use_qdrant:
-            try:
-                result = self.qdrant_pipeline.run_pledge_query_with_sources(question)
-                return result["answer"], []  # Qdrant RAG에서는 sources가 이미 답변에 포함되어 있음
-            except Exception as e:
-                print(f"Qdrant RAG 에러 발생: {str(e)}")
-                print("기존 방식으로 폴백합니다.")
-                self.use_qdrant = False
-
         if not policies:
             return "죄송합니다. 검색 조건에 맞는 공약을 찾을 수 없습니다. 다른 검색어나 필터를 사용해보세요.", []
             

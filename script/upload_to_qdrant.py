@@ -1,8 +1,7 @@
 import os
 import json
 from dotenv import load_dotenv
-from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import Qdrant
+from openai import OpenAI
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 
@@ -35,13 +34,25 @@ def create_qdrant_collection():
     )
     print("새 컬렉션이 생성되었습니다.")
 
+def get_embedding(text: str, client: OpenAI) -> list:
+    """OpenAI API를 사용하여 텍스트의 임베딩을 생성합니다."""
+    try:
+        response = client.embeddings.create(
+            model="text-embedding-ada-002",
+            input=text
+        )
+        return response.data[0].embedding
+    except Exception as e:
+        print(f"임베딩 생성 오류: {str(e)}")
+        return None
+
 def upload_to_qdrant():
     """정책 데이터를 Qdrant에 업로드합니다."""
-    # OpenAI Embeddings 모델 초기화
-    embeddings = OpenAIEmbeddings()
+    # OpenAI 클라이언트 초기화
+    openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     
     # Qdrant 클라이언트 초기화
-    client = QdrantClient("localhost", port=6333)
+    qdrant_client = QdrantClient("localhost", port=6333)
     
     # 컬렉션 재생성
     create_qdrant_collection()
@@ -50,37 +61,39 @@ def upload_to_qdrant():
     policies = load_policy_data()
     print(f"로드된 정책 수: {len(policies)}")
     
-    # 문서와 메타데이터 준비
-    documents = []
-    metadatas = []
-    
-    for policy in policies:
-        # 문서 내용을 정책 텍스트로 설정
-        content = policy["text"]
-        documents.append(content)
-        
-        # 메타데이터 준비
-        metadata = {
-            "id": str(policy["id"]),  # id를 문자열로 변환
-            "candidate": policy["candidate"],
-            "topic": policy["topic"],
-            "source": policy["source"],
-            "pledge": policy["text"]  # text를 pledge로 저장
-        }
-        metadatas.append(metadata)
-    
-    # Qdrant에 업로드
-    qdrant = Qdrant(
-        client=client,
-        collection_name="policy_collection",
-        embeddings=embeddings
-    )
-    
-    # 새 데이터 업로드
-    qdrant.add_texts(
-        texts=documents,
-        metadatas=metadatas
-    )
+    # 각 정책을 Qdrant에 업로드
+    for i, policy in enumerate(policies):
+        try:
+            # 텍스트 임베딩 생성
+            embedding = get_embedding(policy["text"], openai_client)
+            if embedding is None:
+                print(f"정책 {policy['id']} 임베딩 생성 실패, 건너뜀")
+                continue
+            
+            # Qdrant에 포인트 추가
+            qdrant_client.upsert(
+                collection_name="policy_collection",
+                points=[
+                    models.PointStruct(
+                        id=policy["id"],
+                        vector=embedding,
+                        payload={
+                            "id": str(policy["id"]),
+                            "candidate": policy["candidate"],
+                            "topic": policy["topic"],
+                            "source": policy["source"],
+                            "pledge": policy["text"]
+                        }
+                    )
+                ]
+            )
+            
+            if (i + 1) % 10 == 0:
+                print(f"진행률: {i + 1}/{len(policies)}")
+                
+        except Exception as e:
+            print(f"정책 {policy['id']} 업로드 오류: {str(e)}")
+            continue
     
     print("데이터 업로드가 완료되었습니다.")
 
